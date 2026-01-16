@@ -1,0 +1,51 @@
+<div class="min-h-screen bg-gray-900 text-white p-6 flex flex-col items-center justify-center">
+  <h1 class="text-4xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">
+    beHonest
+  </h1>
+
+  <div class="max-w-md w-full bg-gray-800 rounded-xl p-6 shadow-2xl border border-gray-700">
+    <div class="flex flex-col gap-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold">Location Status</h2>
+        <div [class.bg-green-500]="geoService.isWatching()" [class.bg-red-500]="!geoService.isWatching()"
+          class="w-3 h-3 rounded-full animate-pulse"></div>
+      </div>
+
+      <div class="bg-gray-900 rounded-lg p-4 font-mono text-sm min-h-[100px] flex items-center justify-center">
+        @if (geoService.error()) {
+        <p class="text-red-400">{{ geoService.error() }}</p>
+        } @else if (geoService.currentPosition()) {
+        <div class="space-y-2 w-full">
+          <div class="flex justify-between">
+            <span class="text-gray-400">Lat:</span>
+            <span>{{ geoService.coordinates()?.lat | number:'1.4-4' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Lng:</span>
+            <span>{{ geoService.coordinates()?.lng | number:'1.4-4' }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Accuracy:</span>
+            <span>±{{ geoService.coordinates()?.accuracy | number:'1.0-0' }}m</span>
+          </div>
+        </div>
+        } @else {
+        <p class="text-gray-500">Waiting for GPS signal...</p>
+        }
+      </div>
+
+      <button (click)="toggleLocation()"
+        class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 rounded-lg font-medium transition-all transform active:scale-95 shadow-lg">
+        {{ geoService.isWatching() ? 'Stop Tracking' : 'Start Check-in' }}
+      </button>
+
+      <a routerLink="/new-business"
+        class="block text-center w-full py-3 px-4 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 rounded-lg font-medium transition-all mt-2">
+        + Register New Business
+      </a>
+    </div>
+  </div>
+
+  <p class="mt-8 text-gray-500 text-sm">Hito 1: GeoService & Infrastructure</p>
+</div>
+<router-outlet />
