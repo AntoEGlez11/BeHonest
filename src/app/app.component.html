@@ -39,10 +39,42 @@
         {{ geoService.isWatching() ? 'Stop Tracking' : 'Start Check-in' }}
       </button>
 
-      <a routerLink="/new-business"
+      <button *ngIf="!isRegistering" (click)="startRegistration()"
         class="block text-center w-full py-3 px-4 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 rounded-lg font-medium transition-all mt-2">
         + Register New Business
-      </a>
+      </button>
+
+      <!-- Registration Overlay UI -->
+      <div *ngIf="isRegistering"
+        class="mt-4 p-4 bg-gray-800 rounded-lg border border-emerald-500 animate-fade-in relative">
+        <button (click)="cancelRegistration()" class="absolute top-2 right-2 text-gray-400 hover:text-white">✕</button>
+
+        <h3 class="text-lg font-bold text-emerald-400 mb-2">Step 1: Pin Location</h3>
+        <p class="text-sm text-gray-300 mb-4">
+          Tap the map to place the pin.
+          <span class="text-yellow-400">Must be within 10m of your location (Green Circle).</span>
+        </p>
+
+        @if (selectedLocation) {
+        <div class="mb-4 p-2 bg-emerald-900/30 rounded text-sm text-center">
+          ✅ Location Selected!
+        </div>
+
+        <app-business-registration [forcedLocation]="selectedLocation" (cancelled)="cancelRegistration()"
+          (registered)="onBusinessRegistered()">
+        </app-business-registration>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="w-full max-w-4xl mt-8 relative">
+    <app-map (locationSelected)="onLocationSelected($event)"></app-map>
+
+    <!-- Instruction Toast -->
+    <div *ngIf="isRegistering && !selectedLocation"
+      class="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-black/80 px-4 py-2 rounded-full text-white text-sm shadow-xl pointer-events-none">
+      Tap within the circle to pin business
     </div>
   </div>
 

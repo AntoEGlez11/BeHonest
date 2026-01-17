@@ -1,64 +1,59 @@
-<div class="min-h-screen bg-gray-900 text-gray-100 flex flex-col items-center p-4">
-    <div class="w-full max-w-lg bg-gray-800 rounded-xl shadow-2xl p-6 mt-10 border border-gray-700">
-        <h2 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400 mb-6">
-            Register New Spot
-        </h2>
+<div class="space-y-4">
+    <h2 class="text-xl font-bold text-white mb-4">Register New Spot</h2>
 
-        @if (errorMessage()) {
-        <div class="bg-red-900/50 border border-red-500 text-red-200 p-3 rounded mb-4">
-            {{ errorMessage() }}
-        </div>
-        }
-
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
-
-            <!-- Name -->
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1">Business Name</label>
-                <input type="text" formControlName="name"
-                    class="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                    placeholder="e.g. Tacos El Paisa">
-            </div>
-
-            <!-- Category -->
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1">Category</label>
-                <select formControlName="category"
-                    class="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition-colors">
-                    <option value="Informal">Informal / Street Vendor</option>
-                    <option value="Restaurant">Restaurant</option>
-                    <option value="Service">Service</option>
-                </select>
-            </div>
-
-            <!-- Description -->
-            <div>
-                <label class="block text-sm font-medium text-gray-400 mb-1">Description (Optional)</label>
-                <textarea formControlName="description" rows="3"
-                    class="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition-colors"
-                    placeholder="Tell us about the spot..."></textarea>
-            </div>
-
-            <!-- Location Status -->
-            <div class="bg-gray-900 p-4 rounded-lg flex items-center justify-between border border-gray-700">
-                <div class="flex items-center gap-2">
-                    <div [class.bg-green-500]="currentPosition()" [class.bg-red-500]="!currentPosition()"
-                        class="w-2 h-2 rounded-full animate-pulse"></div>
-                    <span class="text-sm font-mono text-gray-400">
-                        @if(currentPosition()) {
-                        GPS Locked (±{{ currentPosition()?.coords?.accuracy | number:'1.0-0' }}m)
-                        } @else {
-                        Waiting for GPS...
-                        }
-                    </span>
-                </div>
-            </div>
-
-            <button type="submit" [disabled]="form.invalid || isSubmitting() || !currentPosition()"
-                class="w-full py-3 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-bold rounded-lg shadow-lg transform transition hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed">
-                {{ isSubmitting() ? 'Registering...' : 'Create Business' }}
-            </button>
-
-        </form>
+    @if (errorMessage()) {
+    <div class="bg-red-900/50 border border-red-500 text-red-200 p-2 rounded text-sm">
+        {{ errorMessage() }}
     </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-3">
+
+        <!-- Name -->
+        <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1">Business Name</label>
+            <input type="text" formControlName="name"
+                class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
+                placeholder="e.g. Tacos El Paisa">
+        </div>
+
+        <!-- Category -->
+        <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1">Category</label>
+            <select formControlName="category"
+                class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm focus:ring-1 focus:ring-emerald-500 outline-none">
+                <option value="Informal">Informal / Street Vendor</option>
+                <option value="Restaurant">Restaurant</option>
+                <option value="Service">Service</option>
+            </select>
+        </div>
+
+        <!-- Description -->
+        <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1">Description (Optional)</label>
+            <textarea formControlName="description" rows="2"
+                class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-sm focus:ring-1 focus:ring-emerald-500 outline-none"
+                placeholder="Details..."></textarea>
+        </div>
+
+        <!-- Location Status (Using Input) -->
+        <div class="bg-gray-900 p-2 rounded flex items-center gap-2 border border-gray-700">
+            <span class="text-green-500">📍</span>
+            <span class="text-xs font-mono text-gray-300">
+                Pin: {{ forcedLocation.lat | number:'1.5-5' }}, {{ forcedLocation.lng | number:'1.5-5' }}
+            </span>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+            <button type="button" (click)="onCancel()"
+                class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition">
+                Cancel
+            </button>
+            <button type="submit" [disabled]="form.invalid || isSubmitting()"
+                class="flex-1 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:to-teal-500 text-white text-sm font-bold rounded shadow transition disabled:opacity-50">
+                {{ isSubmitting() ? 'Saving...' : 'Confirm' }}
+            </button>
+        </div>
+
+    </form>
 </div>

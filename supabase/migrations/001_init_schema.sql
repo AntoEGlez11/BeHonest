@@ -60,10 +60,26 @@ create or replace function public.nearby_businesses(
   long float,
   radius_meters float
 )
-returns setof public.businesses
+returns table (
+  id uuid,
+  name text,
+  category text,
+  description text,
+  lat float,
+  lng float,
+  dist_meters float
+)
 language sql
+security definer
 as $$
-  select *
+  select 
+    id, 
+    name, 
+    category, 
+    description, 
+    st_y(location::geometry) as lat, 
+    st_x(location::geometry) as lng, 
+    st_distance(location, st_setsrid(st_makepoint(long, lat), 4326)) as dist_meters
   from public.businesses
   where ST_DWithin(
     location,

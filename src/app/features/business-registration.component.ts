@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, Input, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { GeoService } from '../core/services/geo.service';
 import { SupabaseService } from '../core/services/supabase.service';
@@ -14,9 +14,11 @@ import { DecimalPipe } from '@angular/common';
 })
 export class BusinessRegistrationComponent {
     private fb = inject(FormBuilder);
-    private geoService = inject(GeoService);
     private supabaseService = inject(SupabaseService);
-    private router = inject(Router);
+
+    @Input() forcedLocation!: { lat: number, lng: number };
+    @Output() cancelled = new EventEmitter<void>();
+    @Output() registered = new EventEmitter<void>();
 
     isSubmitting = signal(false);
     errorMessage = signal<string | null>(null);
@@ -28,21 +30,11 @@ export class BusinessRegistrationComponent {
         is_informal: [true]
     });
 
-    // Expose GeoService signals to template
-    currentPosition = this.geoService.currentPosition;
-    locationError = this.geoService.error;
-
-    constructor() {
-        this.geoService.startWatching();
-    }
-
     async onSubmit() {
         if (this.form.invalid) return;
 
-        // Validate we have location
-        const coords = this.geoService.coordinates();
-        if (!coords) {
-            this.errorMessage.set('We need your location to register the business.');
+        if (!this.forcedLocation) {
+            this.errorMessage.set('Location is missing.');
             return;
         }
 
@@ -60,19 +52,20 @@ export class BusinessRegistrationComponent {
 
             await this.supabaseService.createBusiness(
                 businessData,
-                coords.lat,
-                coords.lng
+                this.forcedLocation.lat,
+                this.forcedLocation.lng
             );
 
-            // Success! Redirect to home or dashboard
-            // For now, simple alert or redirect
-            alert('Business Created Successfully!');
-            this.router.navigate(['/']);
+            this.registered.emit();
 
         } catch (err: any) {
             this.errorMessage.set(err.message || 'Failed to create business');
         } finally {
             this.isSubmitting.set(false);
         }
+    }
+
+    onCancel() {
+        this.cancelled.emit();
     }
 }
