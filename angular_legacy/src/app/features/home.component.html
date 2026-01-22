@@ -1,0 +1,158 @@
+<!-- Main Mobile Layout Container -->
+<div class="relative w-full h-screen bg-gray-900 overflow-hidden flex flex-col font-sans">
+
+    <!-- MAP LAYER (Full Background) -->
+    <div class="absolute inset-0 z-0 bg-gray-900">
+        <app-map (locationSelected)="onLocationSelected($event)"></app-map>
+    </div>
+
+    <!-- UI LAYER: Safe Area Wrapper -->
+    <div class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between safe-area-inset">
+
+        <!-- TOP BAR: Search & Menu -->
+        <div class="pointer-events-auto p-4 w-full flex items-center justify-center gap-3 animate-slide-down">
+
+            <!-- Menu Toggle (Avatar/Icon) -->
+            <button (click)="toggleSidebar()"
+                class="w-12 h-12 rounded-full bg-white shadow-xl flex items-center justify-center border-2 border-gray-100 active:scale-95 transition-transform overflow-hidden relative">
+                <span class="text-2xl transform hover:rotate-90 transition-transform">🍔</span>
+            </button>
+
+            <!-- Search Bar (Fake Input) -->
+            <div
+                class="flex-1 h-12 bg-white rounded-full shadow-xl flex items-center px-4 gap-3 transition-all active:scale-[0.98]">
+                <span class="text-emerald-500 text-xl font-bold">🔍</span>
+                <input type="text" placeholder="¿A dónde vas?"
+                    class="w-full h-full bg-transparent border-none outline-none text-gray-800 placeholder-gray-400 font-medium">
+            </div>
+
+            <!-- Profile/Brand Icon -->
+            <div
+                class="w-12 h-12 rounded-full bg-gray-900 shadow-xl flex items-center justify-center border-2 border-gray-700">
+                <span class="text-xl">😎</span>
+            </div>
+
+        </div>
+
+
+        <!-- SIDEBAR DRAWER (Overlay) -->
+        <div class="fixed inset-0 z-[100] pointer-events-none" *ngIf="isSidebarOpen">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto transition-opacity"
+                (click)="toggleSidebar()"></div>
+
+            <!-- Drawer Content -->
+            <div
+                class="absolute top-0 left-0 h-full w-3/4 max-w-sm bg-gray-900 border-r border-gray-800 shadow-2xl pointer-events-auto transform transition-transform animate-slide-right flex flex-col p-6">
+                <!-- Header -->
+                <div class="flex items-center gap-3 mb-10">
+                    <div
+                        class="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center text-3xl shadow-lg border-4 border-gray-800">
+                        😎
+                    </div>
+                    <div>
+                        <h2 class="text-white font-bold text-xl">Usuario Demo</h2>
+                        <div class="text-emerald-400 text-xs font-bold uppercase tracking-wider">Nivel: Explorador</div>
+                    </div>
+                </div>
+
+                <!-- Menu Items -->
+                <nav class="flex flex-col gap-2 flex-1">
+                    <button
+                        class="flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-800 text-gray-300 hover:text-white transition-colors">
+                        <span class="text-2xl bg-gray-800 p-2 rounded-full">🗺️</span>
+                        <span class="font-bold">Mis Rutas</span>
+                    </button>
+                    <button
+                        class="flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-800 text-gray-300 hover:text-white transition-colors">
+                        <span class="text-2xl bg-gray-800 p-2 rounded-full">⭐</span>
+                        <span class="font-bold">Mis Reseñas</span>
+                    </button>
+                    <button
+                        class="flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-800 text-gray-300 hover:text-white transition-colors">
+                        <span class="text-2xl bg-gray-800 p-2 rounded-full">⚙️</span>
+                        <span class="font-bold">Configuración</span>
+                    </button>
+                </nav>
+
+                <!-- Footer -->
+                <div class="text-center text-gray-600 text-xs mt-auto">
+                    beHonest v0.2.0 • Hito 2 Alpha
+                </div>
+            </div>
+        </div>
+
+
+        <!-- CENTER: Quick Notifications / Instructions -->
+        <div class="flex-1 flex flex-col items-center justify-center pointer-events-none p-6">
+            <!-- Instructions for Picker -->
+            <div *ngIf="isRegistering && !selectedLocation" class="animate-bounce-in pointer-events-auto">
+                <div
+                    class="bg-gray-900/95 backdrop-blur-xl border-2 border-emerald-500 shadow-2xl rounded-2xl px-6 py-4 text-center transform scale-110">
+                    <div class="text-4xl mb-2">📍</div>
+                    <h3 class="text-lg font-black text-white">Mueve el mapa</h3>
+                    <p class="text-sm text-gray-400">Coloca el pin en el negocio</p>
+                </div>
+            </div>
+
+            <!-- GPS Warning -->
+            <div *ngIf="!geoService.isWatching()"
+                class="mt-4 bg-rose-500 text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
+                📡 GPS Desconectado
+            </div>
+        </div>
+
+
+        <!-- BOTTOM BAR: FAB & Main Actions -->
+        <div class="pointer-events-auto pb-8 px-6 w-full flex flex-col items-end gap-4">
+
+            <!-- Recenter Button (Mini FAB) -->
+            <button (click)="mapComponent.locateUser()"
+                class="bg-white text-gray-900 p-3 rounded-full shadow-lg border border-gray-200 active:bg-gray-100 active:scale-95 transition-all">
+                🎯
+            </button>
+
+            <!-- MAIN FAB (Big Orange Button) -->
+            <div class="relative w-full flex justify-end">
+
+                <!-- Registration Flow Container (Replaces FAB when active) -->
+                <div *ngIf="isRegistering"
+                    class="w-full bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-[2rem] p-5 shadow-2xl animate-slide-up">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-white">
+                            {{ selectedLocation ? 'Completar Registro' : 'Ubicación' }}
+                        </h3>
+                        <button (click)="cancelRegistration()"
+                            class="bg-gray-800 p-2 rounded-full text-gray-400 hover:text-white transition-colors">✕</button>
+                    </div>
+
+                    <div *ngIf="selectedLocation">
+                        <app-business-registration [forcedLocation]="selectedLocation"
+                            (cancelled)="cancelRegistration()" (registered)="onBusinessRegistered()">
+                        </app-business-registration>
+                    </div>
+
+                    <button *ngIf="!selectedLocation" (click)="cancelRegistration()"
+                        class="w-full py-3 bg-gray-800 text-gray-400 font-bold rounded-xl hover:bg-gray-700 hover:text-white transition-colors">
+                        Cancelar
+                    </button>
+                </div>
+
+                <!-- The "Waze" Reporting FAB -->
+                <button *ngIf="!isRegistering" (click)="startRegistration()"
+                    class="group relative flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-orange-400 to-orange-600 rounded-full shadow-[0_8px_20px_rgba(249,115,22,0.4)] border-4 border-gray-900 hover:scale-110 active:scale-95 transition-all z-20">
+                    <span class="text-3xl filter drop-shadow-md">📢</span>
+
+                    <!-- Label connecting to FAB -->
+                    <div
+                        class="absolute right-20 bg-gray-900/90 text-white px-3 py-1 rounded-lg text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        Reportar / Registrar
+                    </div>
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,78 @@
+<!-- Backdrop -->
+<div class="fixed inset-0 z-[9999] flex items-end justify-center pointer-events-none">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm pointer-events-auto transition-opacity" (click)="close()">
+    </div>
+
+    <!-- Bottom Sheet -->
+    <div
+        class="w-full max-w-md bg-gray-900 rounded-t-[2.5rem] p-6 pb-10 pointer-events-auto transform transition-transform animate-slide-up shadow-2xl relative border-t border-gray-700/50">
+
+        <!-- Drag Handle / Visual indicator -->
+        <div class="w-12 h-1.5 bg-gray-700 rounded-full mx-auto mb-6"></div>
+
+        <!-- Close X -->
+        <button (click)="close()"
+            class="absolute top-6 right-6 p-2 bg-gray-800 text-gray-400 rounded-full hover:bg-gray-700 hover:text-white transition-colors">✕</button>
+
+        <h2 class="text-3xl font-black text-white text-center mb-2">¿Cómo te fue?</h2>
+        <p class="text-center text-gray-400 mb-8 font-medium">Ayuda a la comunidad con tu voto</p>
+
+        <!-- GIANT Rating Buttons -->
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <button (click)="setRating(true)" [class.bg-emerald-500]="isHonest === true"
+                [class.text-gray-900]="isHonest === true" [class.bg-gray-800]="isHonest !== true"
+                [class.translate-y-1]="isHonest === true" [class.shadow-none]="isHonest === true"
+                class="group relative h-40 rounded-[2rem] border-2 border-transparent transition-all shadow-[0_6px_0_rgb(31,41,55)] active:shadow-none active:translate-y-2 hover:border-emerald-500/50 flex flex-col items-center justify-center gap-3">
+                <span class="text-6xl group-hover:scale-110 transition-transform">😇</span>
+                <span class="font-black text-lg">HONESTO</span>
+
+                <!-- Checkmark badge -->
+                <div *ngIf="isHonest === true"
+                    class="absolute top-3 right-3 bg-white text-emerald-600 rounded-full w-6 h-6 flex items-center justify-center shadow-sm">
+                    ✓</div>
+            </button>
+
+            <button (click)="setRating(false)" [class.bg-rose-500]="isHonest === false"
+                [class.text-white]="isHonest === false" [class.bg-gray-800]="isHonest !== false"
+                [class.translate-y-1]="isHonest === false" [class.shadow-none]="isHonest === false"
+                class="group relative h-40 rounded-[2rem] border-2 border-transparent transition-all shadow-[0_6px_0_rgb(31,41,55)] active:shadow-none active:translate-y-2 hover:border-rose-500/50 flex flex-col items-center justify-center gap-3">
+                <span class="text-6xl group-hover:scale-110 transition-transform">🤬</span>
+                <span class="font-black text-lg">ROBO</span>
+
+                <!-- Checkmark badge -->
+                <div *ngIf="isHonest === false"
+                    class="absolute top-3 right-3 bg-white text-rose-600 rounded-full w-6 h-6 flex items-center justify-center shadow-sm">
+                    ✓</div>
+            </button>
+        </div>
+
+        <!-- Optional Details -->
+        <div class="space-y-4 mb-8" *ngIf="isHonest !== null">
+            <!-- Comment -->
+            <textarea [(ngModel)]="comment" rows="2" placeholder="Agrega un detalle útil..."
+                class="w-full bg-gray-800 border-0 rounded-2xl p-4 text-white text-lg placeholder-gray-500 focus:ring-2 focus:ring-emerald-500 transition-all"></textarea>
+
+            <!-- Photo Upload Pill -->
+            <label
+                class="flex items-center gap-4 p-4 bg-gray-800 rounded-2xl cursor-pointer hover:bg-gray-750 transition-colors group">
+                <div
+                    class="bg-gray-700 text-2xl w-12 h-12 rounded-full flex items-center justify-center group-hover:bg-gray-600 transition-colors">
+                    📸</div>
+                <div class="flex-1 overflow-hidden">
+                    <div class="font-bold text-gray-300">Evidencia (Foto/Ticket)</div>
+                    <div class="text-sm text-gray-500 truncate">{{ selectedFile ? selectedFile.name : 'Opcional, pero
+                        recomendado' }}</div>
+                </div>
+                <input type="file" (change)="onFileSelected($event)" accept="image/*" class="hidden">
+            </label>
+        </div>
+
+        <!-- Submit -->
+        <button (click)="submit()" [disabled]="isHonest === null || isSubmitting"
+            class="w-full py-5 bg-white text-gray-900 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-full font-black text-xl shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-3">
+            <span *ngIf="isSubmitting"
+                class="animate-spin h-5 w-5 border-4 border-gray-900 border-t-transparent rounded-full"></span>
+            {{ isSubmitting ? 'ENVIANDO...' : 'PUBLICAR' }}
+        </button>
+    </div>
+</div>

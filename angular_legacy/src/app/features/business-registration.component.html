@@ -1,0 +1,65 @@
+<div class="space-y-4">
+    <!-- Error Toast -->
+    @if (errorMessage()) {
+    <div
+        class="bg-rose-500/10 border border-rose-500/50 text-rose-200 p-3 rounded-2xl text-sm font-medium animate-pulse">
+        🚫 {{ errorMessage() }}
+    </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+
+        <!-- Name Input -->
+        <div class="space-y-1">
+            <label class="px-2 text-xs font-bold text-gray-400 uppercase tracking-wide">Nombre del Negocio</label>
+            <input type="text" formControlName="name"
+                class="w-full bg-gray-800/50 border border-gray-600 focus:border-emerald-500 rounded-2xl px-4 py-3 text-white placeholder-gray-500 outline-none transition-all"
+                placeholder="Ej. Tacos El Paisa">
+        </div>
+
+        <!-- Category Select -->
+        <div class="space-y-1">
+            <label class="px-2 text-xs font-bold text-gray-400 uppercase tracking-wide">Categoría</label>
+            <div class="relative">
+                <select formControlName="category"
+                    class="w-full appearance-none bg-gray-800/50 border border-gray-600 focus:border-emerald-500 rounded-2xl px-4 py-3 text-white outline-none transition-all">
+                    <option value="Informal">🌮 Puta calle (Informal)</option>
+                    <option value="Restaurant">🍔 Local / Restaurante</option>
+                    <option value="Service">🔧 Servicio / Taller</option>
+                    <option value="Entertainment">🍿 Entretenimiento</option>
+                </select>
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">▼</div>
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-1">
+            <label class="px-2 text-xs font-bold text-gray-400 uppercase tracking-wide">Descripción</label>
+            <textarea formControlName="description" rows="2"
+                class="w-full bg-gray-800/50 border border-gray-600 focus:border-emerald-500 rounded-2xl px-4 py-3 text-white placeholder-gray-500 outline-none transition-all"
+                placeholder="¿Qué venden? ¿Horario?"></textarea>
+        </div>
+
+        <!-- Location Badge -->
+        <div class="flex items-center gap-3 px-3 py-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+            <span class="text-xl">📍</span>
+            <div class="flex flex-col">
+                <span class="text-[10px] uppercase font-bold text-emerald-400">Ubicación Fijada</span>
+                <span class="text-xs font-mono text-gray-300">
+                    {{ forcedLocation.lat | number:'1.5-5' }}, {{ forcedLocation.lng | number:'1.5-5' }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="pt-2">
+            <button type="submit" [disabled]="form.invalid || isSubmitting()"
+                class="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl font-black text-gray-900 text-lg shadow-[0_4px_0_rgb(6,95,70)] active:shadow-none active:translate-y-1 transition-all flex items-center justify-center gap-2">
+                <span *ngIf="isSubmitting()"
+                    class="animate-spin h-5 w-5 border-2 border-gray-900 border-t-transparent rounded-full"></span>
+                {{ isSubmitting() ? 'GUARDANDO...' : 'CONFIRMAR REGISTRO' }}
+            </button>
+        </div>
+
+    </form>
+</div>

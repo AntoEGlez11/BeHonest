@@ -1,0 +1,81 @@
+<div class="min-h-screen bg-gray-900 text-white p-4 pb-20">
+    <!-- Header -->
+    <header class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-green-400 bg-clip-text text-transparent">
+            Dashboard
+        </h1>
+        <button (click)="logout()" class="text-sm text-gray-400 hover:text-white">
+            Salir
+        </button>
+    </header>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="flex flex-col items-center justify-center py-20">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-500 mb-4"></div>
+        <p class="text-gray-400">Cargando datos...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="bg-red-500/10 border border-red-500/50 rounded-lg p-4 mb-4 text-red-200">
+        {{ error }}
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!loading && !error" class="space-y-6">
+
+        <!-- Profile Card -->
+        <div class="bg-gray-800 rounded-xl p-5 shadow-lg border border-gray-700">
+            <div class="flex items-center space-x-4">
+                <div
+                    class="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-xl font-bold">
+                    {{ userProfile?.name?.charAt(0) || 'U' }}
+                </div>
+                <div>
+                    <h2 class="font-bold text-lg">{{ userProfile?.name }}</h2>
+                    <p class="text-xs text-gray-400">{{ userProfile?.email }}</p>
+                    <span
+                        class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] bg-green-500/20 text-green-400 border border-green-500/30 uppercase tracking-wider">
+                        {{ userProfile?.role }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-2 gap-3">
+            <button routerLink="/"
+                class="p-4 bg-gray-800 rounded-xl border border-gray-700 active:scale-95 transition-transform text-left">
+                <div class="text-2xl mb-2">🗺️</div>
+                <div class="font-bold text-sm">Ver Mapa</div>
+                <div class="text-xs text-gray-500">Explorar negocios</div>
+            </button>
+
+            <button
+                class="p-4 bg-gray-800 rounded-xl border border-gray-700 active:scale-95 transition-transform text-left opacity-50 cursor-not-allowed">
+                <div class="text-2xl mb-2">🚗</div>
+                <div class="font-bold text-sm">Mis Autos</div>
+                <div class="text-xs text-gray-500">Próximamente</div>
+            </button>
+        </div>
+
+        <!-- Recent Activity / Stats -->
+        <div class="bg-gray-800 rounded-xl p-5 shadow-lg border border-gray-700">
+            <h3 class="font-bold text-gray-300 mb-3">Estadísticas</h3>
+            <div class="flex justify-between text-center divided-x divided-gray-700">
+                <div>
+                    <div class="text-xl font-bold text-white">0</div>
+                    <div class="text-xs text-gray-500">Puntos</div>
+                </div>
+                <div>
+                    <div class="text-xl font-bold text-white">0</div>
+                    <div class="text-xs text-gray-500">Check-ins</div>
+                </div>
+                <div>
+                    <div class="text-xl font-bold text-white">0</div>
+                    <div class="text-xs text-gray-500">Sorteos</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

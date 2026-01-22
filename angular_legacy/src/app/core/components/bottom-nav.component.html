@@ -1,0 +1,27 @@
+<nav class="fixed bottom-0 left-0 w-full bg-gray-900/90 backdrop-blur-md border-t border-gray-800 pb-safe z-[9999]">
+    <div class="flex justify-around items-center h-16 max-w-md mx-auto">
+
+        <!-- Home / Map Link -->
+        <a routerLink="/" routerLinkActive="text-emerald-400" [routerLinkActiveOptions]="{exact: true}"
+            class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-gray-300 transition-colors">
+            <div class="text-2xl mb-1">🗺️</div>
+            <span class="text-[10px] font-medium">Mapa</span>
+        </a>
+
+        <!-- Add/Center Action (Optional Main Button) -->
+        <!-- Could be used for "Quick Check-in" in future, for now just a spacer or central logo -->
+        <!-- <div class="relative -top-5">
+      <button class="w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/20 flex items-center justify-center text-white text-2xl border-4 border-gray-900">
+        +
+      </button>
+    </div> -->
+
+        <!-- Dashboard / Profile Link -->
+        <a routerLink="/dashboard" routerLinkActive="text-blue-400"
+            class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-gray-300 transition-colors">
+            <div class="text-2xl mb-1">👤</div>
+            <span class="text-[10px] font-medium">Perfil</span>
+        </a>
+
+    </div>
+</nav>
