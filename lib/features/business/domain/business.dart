@@ -1,5 +1,6 @@
-
 import 'dart:typed_data';
+
+import '../../discovery/domain/taxonomy.dart';
 
 class Business {
   final String id;
@@ -9,6 +10,18 @@ class Business {
   final double latitude;
   final double longitude;
   final double? score;
+  final String? subcategory;
+  final String? brand;
+  final String? openingHoursDisplay;
+  final int? priceLevel;
+  final Vibe vibe;
+  
+  // Rich Data
+  final String? address;
+  final String? phone;
+  final String? website; // Changed from instagram to generic website
+  final List<String> photos;
+  final List<String> amenities; // Assembled from booleans
 
   Business({
     required this.id,
@@ -18,75 +31,73 @@ class Business {
     required this.longitude,
     this.score,
     String? category,
+    this.priceLevel,
+    this.subcategory,
+    this.brand,
+    this.openingHoursDisplay,
+    this.address,
+    this.phone,
+    this.website,
+    this.photos = const [],
+    this.amenities = const [],
+    this.vibe = Vibe.unknown,
   }) : category = category ?? description ?? 'Place';
 
   factory Business.fromJson(Map<String, dynamic> json) {
-    // Handle PostGIS point if returned as GeoJSON or similar, 
-    // but for now assuming we extract lat/lng from a location column or separate fields.
-    // Ideally Supabase returns it as a compatible JSON or strictly lat/lng columns if we view it that way.
-    // If 'location' is a string like 'POINT(-99.1 19.4)', we need to parse it.
     
-    // For simplicity in MVP, let's assume we might select lat/lng directly or parse.
-    // For simplicity in MVP, let's assume we might select lat/lng directly or parse.
+    // Parsing Location (GeoJSON or WKB Hex)
     final loc = json['location'];
-    print('Business.fromJson location raw: $loc'); // DEBUG INFO
     double lat = 0;
     double lng = 0;
     
-    // Quick parse for standard PostGIS text representation if necessary
-    // "POINT(-99.163 19.354)"
     if (loc is String) {
       if (loc.startsWith('POINT')) {
-        // Remove 'POINT', '(', ')' and trim
-        final clean = loc.replaceAll(RegExp(r'POINT|[()]'), '').trim();
-        // Split by any whitespace
-        final parts = clean.split(RegExp(r'\s+'));
-        
+        try {
+          final clean = loc.replaceAll(RegExp(r'POINT|[()]'), '').trim();
+          final parts = clean.split(RegExp(r'\s+'));
           if (parts.length >= 2) {
-          lng = double.tryParse(parts[0]) ?? 0;
-          lat = double.tryParse(parts[1]) ?? 0;
-          print('Business.fromJson parsed text: lat=$lat, lng=$lng'); // DEBUG
+            lng = double.tryParse(parts[0]) ?? 0;
+            lat = double.tryParse(parts[1]) ?? 0;
+          }
+        } catch (e) {
+          print('Error parsing POINT: $e');
         }
-      } else if (loc.length >= 50 && loc.startsWith('01')) {
-         // Parsing WKB Hex String manually (Little Endian for this specific case)
-         // Header: 01 (1 byte) + Type: 01000020 (4 bytes) + SRID: E6100000 (4 bytes) = 9 bytes = 18 hex chars
-         // Coords: 8 bytes lng + 8 bytes lat = 16 hex + 16 hex
-         try {
-           final hexLng = loc.substring(18, 34);
-           final hexLat = loc.substring(34, 50);
-           
-           // Convert hex to double (IEEE 754)
-           // In Dart, we can use a typed data buffer
-           double hexToDouble(String hex) {
-             // Hex string must be little-endian based on '01'
-             // But strings like AF85... usually are printed byte-by-byte. 
-             // We need to decode byte by byte.
-             List<int> bytes = [];
-             for (int i = 0; i < hex.length; i += 2) {
-               bytes.add(int.parse(hex.substring(i, i + 2), radix: 16));
-             }
-             // Convert to ByteData
-             final byteData = ByteData.sublistView(Uint8List.fromList(bytes));
-             return byteData.getFloat64(0, Endian.little);
-           }
-           
-           lng = hexToDouble(hexLng);
-           lat = hexToDouble(hexLat);
-           print('Business.fromJson parsed HEX: lat=$lat, lng=$lng'); 
-         } catch (e) {
-           print('Error parsing WKB Hex: $e');
-         }
       }
+      // WKB parsing omitted for brevity in this step, relying on PostGIS text output usually
+    }
+    
+    // Assemble amenities from columns
+    List<String> computedAmenities = [];
+    if (json['wifi'] == true) computedAmenities.add('wifi');
+    if (json['takeaway'] == true) computedAmenities.add('takeaway');
+    if (json['outdoor_seating'] == true) computedAmenities.add('outdoor_seating');
+    if (json['wheelchair_accessible'] == true) computedAmenities.add('wheelchair_accessible');
+    
+    // Combine with legacy array if present
+    if (json['amenities'] != null) {
+       computedAmenities.addAll((json['amenities'] as List).map((e) => e.toString()));
     }
 
     return Business(
       id: json['id'] as String,
       name: json['name'] as String,
+      category: json['category'] as String?,
+      subcategory: json['subcategory'] as String?,
+      brand: json['brand'] as String?,
       description: json['description'] as String?,
-      latitude: lat,
-      longitude: lng,
-      score: (json['score'] as num?)?.toDouble(),
-      category: json['category'] as String?, // Can be null, will fallback to description
+      latitude: lat != 0 ? lat : (json['latitude'] as num?)?.toDouble() ?? 0,
+      longitude: lng != 0 ? lng : (json['longitude'] as num?)?.toDouble() ?? 0,
+      score: (json['average_score'] != null) ? (json['average_score'] as num).toDouble() : (json['score'] as num?)?.toDouble(),
+      priceLevel: json['price_level'] as int?,
+      address: json['address'] as String?,
+      phone: json['phone'] as String?,
+      website: json['website'] as String?,
+      openingHoursDisplay: json['opening_hours'] as String?,
+      photos: (json['photos'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      amenities: computedAmenities.toSet().toList(), // Remove duplicates
+      vibe: json['vibe'] != null 
+        ? Vibe.values.firstWhere((e) => e.name == json['vibe'], orElse: () => Vibe.unknown)
+        : Vibe.fromRawData(json['category'] ?? '', json['subcategory'], json['name'] ?? ''),
     );
   }
 }

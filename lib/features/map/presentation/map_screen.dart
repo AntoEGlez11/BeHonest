@@ -8,16 +8,21 @@ import 'package:latlong2/latlong.dart' hide Path;
 import '../../business/domain/business.dart';
 import '../providers/business_provider.dart';
 import '../application/map_controller.dart' as logic;
+import '../../business/application/visit_service.dart';
+import '../../auth/data/auth_repository.dart';
 
 // UI Imports
 import '../../home/presentation/widgets/floating_search_bar.dart';
 import '../../home/presentation/widgets/custom_drawer.dart';
 import '../../business/presentation/registration_modal.dart';
+import '../../business/presentation/business_sheet.dart';
 import 'widgets/rating_modal.dart';
+import '../../social/presentation/activity_feed.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
+  @override
   @override
   ConsumerState<MapScreen> createState() => _MapScreenState();
 }
@@ -28,8 +33,77 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   
   bool _hasMovedToUser = false;
   bool _isSelectingLocation = false;
-  bool _shouldAutoFollow = true; // "No se mueva" logic: toggle this
+  bool _shouldAutoFollow = true; 
   LatLng? _draggedCenter;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check for First Mission (Karma == 0)
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(seconds: 2)); // Wait for map to settle
+      if (!mounted) return;
+      
+      final user = await ref.read(currentUserProvider.future);
+      if (user.karma == 0) {
+        _showFirstMissionPrompt();
+      }
+    });
+  }
+
+  void _showFirstMissionPrompt() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.5)),
+          boxShadow: [
+            BoxShadow(color: Colors.blue.withValues(alpha: 0.2), blurRadius: 20, spreadRadius: 5),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.rocket_launch, size: 50, color: Colors.blueAccent)
+                .animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+            const SizedBox(height: 16),
+            const Text(
+              '🎯 First Mission Active',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Welcome, Scout! Your generic map is empty of truth.\nRate any business nearby to earn your first Badge and unlock the "Taco Fan" rank.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('Accept Mission', style: TextStyle( fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _startSelectionMode() {
     setState(() {
@@ -105,85 +179,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   void _showBusinessInfoModal(Business business) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true, // Required for DraggableScrollableSheet
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(_getIconData(business.category), color: Colors.blue, size: 30),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        business.name,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        business.category.toUpperCase(),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (business.score != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 16),
-                        const SizedBox(width: 4),
-                        Text(business.score.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            if (business.description != null) ...[
-              Text(business.description!),
-              const SizedBox(height: 24),
-            ],
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _showRatingModal(business);
-                },
-                icon: const Icon(Icons.rate_review),
-                label: const Text('Calificar Servicio'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      builder: (context) => BusinessSheet(business: business),
     );
   }
 
@@ -198,19 +196,35 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
   IconData _getIconData(String category) {
     final cat = category.toLowerCase();
-    if (cat.contains('restaurante') || cat.contains('restaurant') || cat.contains('food') || cat.contains('burger') || cat.contains('pizza')) {
-      return Icons.restaurant;
-    } else if (cat.contains('taller') || cat.contains('mechanic') || cat.contains('repair') || cat.contains('auto')) {
-      return Icons.build_circle;
-    } else if (cat.contains('tienda') || cat.contains('shop') || cat.contains('store') || cat.contains('convenience') || cat.contains('market')) {
-      return Icons.shopping_bag;
-    } else if (cat.contains('puesto') || cat.contains('stand') || cat.contains('kiosk')) {
-      return Icons.storefront;
-    } else if (cat.contains('cafe') || cat.contains('coffee')) {
-      return Icons.local_cafe;
-    } else if (cat.contains('bar') || cat.contains('pub')) {
-      return Icons.local_bar; // or local_drink
+    if (cat.contains('restaurante') || cat.contains('restaurant') || cat.contains('comida')) {
+       // Sub-categories
+       if (cat.contains('pizza')) return Icons.local_pizza;
+       if (cat.contains('burger') || cat.contains('hamburguesa')) return Icons.lunch_dining;
+       if (cat.contains('ramen') || cat.contains('sushi')) return Icons.rice_bowl;
+       if (cat.contains('taco')) return Icons.restaurant; // No specific taco icon in Material
+       return Icons.restaurant;
+    } 
+    
+    if (cat.contains('taller') || cat.contains('mechanic') || cat.contains('repair') || cat.contains('auto')) {
+       return Icons.car_repair;
     }
+    
+    if (cat.contains('bici') || cat.contains('bike') || cat.contains('ciclismo')) {
+       return Icons.pedal_bike;
+    } 
+
+    if (cat.contains('tienda') || cat.contains('shop') || cat.contains('store') || cat.contains('super')) {
+       if (cat.contains('grocer')) return Icons.local_grocery_store;
+       return Icons.shopping_bag;
+    }
+    
+    if (cat.contains('cafe') || cat.contains('coffee')) return Icons.local_cafe;
+    if (cat.contains('bar') || cat.contains('pub') || cat.contains('drink')) return Icons.local_bar;
+    if (cat.contains('gym') || cat.contains('fitness') || cat.contains('crossfit')) return Icons.fitness_center;
+    if (cat.contains('hospital') || cat.contains('clinic') || cat.contains('doctor')) return Icons.local_hospital;
+    if (cat.contains('hotel') || cat.contains('motel')) return Icons.hotel;
+    if (cat.contains('school') || cat.contains('escuela')) return Icons.school;
+
     return Icons.place;
   }
 
@@ -219,6 +233,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     // Watch the Logic MapState
     final mapState = ref.watch(logic.mapControllerProvider);
     final businessesAsync = ref.watch(nearbyBusinessesProvider);
+    final  ghostsAsync = ref.watch(ghostBusinessesProvider);
+    final density = ref.watch(densityProvider).asData?.value ?? 10;
+    final searchQuery = ref.watch(searchQueryProvider);
+    
+    final isExplorerMode = density < 3 && mapState.userLocation != null;
 
     // Removed auto-move to business. This causes the "reset zoom" bug.
     // ref.listen(nearbyBusinessesProvider, ...);
@@ -271,12 +290,17 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   child: Icon(Icons.my_location, color: _shouldAutoFollow ? Colors.blue : Colors.white),
                 ),
                 const SizedBox(height: 16),
-                // Add Business Button
+                // Add Business Button (Flag Planting)
                 FloatingActionButton(
                   heroTag: 'add',
                   onPressed: _startSelectionMode,
-                  child: const Icon(Icons.add_location_alt_outlined),
-                ),
+                  backgroundColor: isExplorerMode ? Colors.orangeAccent : Colors.blue,
+                  child: isExplorerMode 
+                    ? const Icon(Icons.flag).animate(onPlay: (c) => c.repeat()).shake(hz: 2) 
+                    : const Icon(Icons.add_location_alt_outlined),
+                ).animate(target: isExplorerMode ? 1 : 0)
+                 .scale(begin: const Offset(1, 1), end: const Offset(1.2, 1.2), duration: 1000.ms, curve: Curves.easeInOut)
+                 .then().scale(begin: const Offset(1.2, 1.2), end: const Offset(1, 1), duration: 1000.ms),
                 const SizedBox(height: 16),
                 // Helper/Guidance Button
                 FloatingActionButton.small(
@@ -312,11 +336,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
             children: [
               TileLayer(
-                // urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', // DARK MODE
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', // STANDARD OSM (Light)
+                // CartoDB Dark Matter (Premium/Dark Look)
+                urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', 
                 userAgentPackageName: 'com.example.behonest',
-                // retinaMode: true, // Disable retina for ensuring compatibility
-                // subdomains: const ['a', 'b', 'c', 'd'], // OSM doesn't use subdomains usually, or uses a,b,c
+                subdomains: const ['a', 'b', 'c', 'd'],
                 tileProvider: NetworkTileProvider(),
               ),
               
@@ -367,7 +390,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       height: 60,
                       child: GestureDetector(
                         onTap: () => _showBusinessInfoModal(business),
-                        child: _BusinessMarker(business: business),
+                        child: _BusinessMarker(business: business)
+                            .animate()
+                            .scale(duration: 600.ms, curve: Curves.elasticOut),
                       ),
                     );
                   }).toList(),
@@ -394,24 +419,88 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   return const MarkerLayer(markers: []);
                 },
               ),
+
+              // GHOST LAYER (Bounties)
+              ghostsAsync.when(
+                data: (ghosts) => MarkerLayer(
+                  markers: ghosts.map((b) => Marker(
+                      point: LatLng(b.latitude, b.longitude),
+                      width: 50,
+                      height: 50,
+                      child: GestureDetector(
+                        onTap: () => _showBusinessInfoModal(b),
+                        child: _GhostMarker(business: b)
+                            .animate(onPlay: (controller) => controller.repeat(reverse: true))
+                            .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 1000.ms),
+                      ),
+                  )).toList(),
+                ),
+                loading: () => const MarkerLayer(markers: []),
+                error: (_, __) => const MarkerLayer(markers: []),
+              ),
             ],
           ),
           
-          // Floating Search Bar (Top) - Hide when selecting
-          if (!_isSelectingLocation)
+            // Floating Search Bar (Top) - Hide when selecting
+          if (!_isSelectingLocation) ...[
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: SafeArea(
-                child: FloatingSearchBar(
-                  onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FloatingSearchBar(
+                      onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+                    ),
+                    
+                    // SMART MODE BANNER (Honest Roulette)
+                    if (mapState.activeVibe != null && searchQuery.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: mapState.activeVibe!.color.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 4))
+                            ],
+                          ),
+                          child: InkWell(
+                            onTap: () {
+                               ref.read(logic.mapControllerProvider.notifier).clearVibe();
+                               // Re-fetch handled by provider watch
+                            },
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.casino, color: Colors.white, size: 16),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "Exploring: ${mapState.activeVibe!.label.toUpperCase()}",
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(Icons.close, color: Colors.white70, size: 16),
+                              ],
+                            ),
+                          ),
+                        ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
+                      ),
+                  ],
                 )
                 .animate()
                 .slideY(begin: -1, end: 0, duration: 600.ms, curve: Curves.easeOutBack)
                 .fadeIn(),
               ),
             ),
+          ],
+
+          // Social Activity Feed
+          if (!_isSelectingLocation)
+            const ActivityFeedOverlay(),
 
           // Loading Indicator
           if (mapState.isLoading)
@@ -537,35 +626,51 @@ class _BusinessMarker extends StatelessWidget {
 
   IconData _getIconData(String category) {
     final cat = category.toLowerCase();
-    if (cat.contains('restaurante') || cat.contains('restaurant') || cat.contains('food') || cat.contains('burger') || cat.contains('pizza')) {
-      return Icons.restaurant;
-    } else if (cat.contains('taller') || cat.contains('mechanic') || cat.contains('repair') || cat.contains('auto')) {
-      return Icons.build_circle;
-    } else if (cat.contains('tienda') || cat.contains('shop') || cat.contains('store') || cat.contains('convenience') || cat.contains('market')) {
-      return Icons.shopping_bag;
-    } else if (cat.contains('puesto') || cat.contains('stand') || cat.contains('kiosk')) {
-      return Icons.storefront;
-    } else if (cat.contains('cafe') || cat.contains('coffee')) {
-      return Icons.local_cafe;
-    } else if (cat.contains('bar') || cat.contains('pub')) {
-      return Icons.local_bar; // or local_drink
+    if (cat.contains('restaurante') || cat.contains('restaurant') || cat.contains('comida')) {
+       // Sub-categories
+       if (cat.contains('pizza')) return Icons.local_pizza;
+       if (cat.contains('burger') || cat.contains('hamburguesa')) return Icons.lunch_dining;
+       if (cat.contains('ramen') || cat.contains('sushi')) return Icons.rice_bowl;
+       if (cat.contains('taco')) return Icons.restaurant; 
+       return Icons.restaurant;
+    } 
+    
+    if (cat.contains('taller') || cat.contains('mechanic') || cat.contains('repair') || cat.contains('auto')) {
+       return Icons.car_repair;
     }
+    
+    if (cat.contains('bici') || cat.contains('bike') || cat.contains('ciclismo')) {
+       return Icons.pedal_bike;
+    } 
+
+    if (cat.contains('tienda') || cat.contains('shop') || cat.contains('store') || cat.contains('super')) {
+       if (cat.contains('grocer')) return Icons.local_grocery_store;
+       return Icons.shopping_bag;
+    }
+    
+    if (cat.contains('cafe') || cat.contains('coffee')) return Icons.local_cafe;
+    if (cat.contains('bar') || cat.contains('pub') || cat.contains('drink')) return Icons.local_bar;
+    if (cat.contains('gym') || cat.contains('fitness') || cat.contains('crossfit')) return Icons.fitness_center;
+    if (cat.contains('hospital') || cat.contains('clinic') || cat.contains('doctor')) return Icons.local_hospital;
+    if (cat.contains('hotel') || cat.contains('motel')) return Icons.hotel;
+    if (cat.contains('school') || cat.contains('escuela')) return Icons.school;
+
     return Icons.place;
   }
 
   Color _getColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'taller': return Colors.orange;
-      case 'restaurante': return Colors.redAccent;
-      case 'puesto': return Colors.green;
-      case 'tienda': return Colors.purple;
-      default: return Colors.grey;
-    }
+    final cat = category.toLowerCase();
+    if (cat.contains('taller')) return Colors.orange;
+    if (cat.contains('restaurante') || cat.contains('taco')) return Colors.redAccent;
+    if (cat.contains('puesto')) return Colors.green;
+    if (cat.contains('tienda')) return Colors.purple;
+    if (cat.contains('bici')) return Colors.teal;
+    return Colors.grey;
   }
 
   @override
   Widget build(BuildContext context) {
-    final color = _getColor(business.category);
+    final color = business.vibe.color;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -596,4 +701,38 @@ class _BusinessMarker extends StatelessWidget {
   }
 }
 
-// _ArrowClipper removed to fix compilation/web issues
+
+
+class _GhostMarker extends StatelessWidget {
+  final Business business;
+  const _GhostMarker({required this.business});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.purpleAccent.withValues(alpha: 0.6), // Mystery color
+                blurRadius: 10,
+                spreadRadius: 2,
+              )
+            ],
+            border: Border.all(color: Colors.purpleAccent, width: 2),
+          ),
+          child: const Icon(
+            Icons.question_mark,
+            size: 20,
+            color: Colors.purpleAccent,
+          ),
+        ),
+      ],
+    );
+  }
+}

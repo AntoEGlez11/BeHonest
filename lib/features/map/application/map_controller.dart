@@ -1,17 +1,21 @@
+import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../core/services/location_service.dart';
+import '../../discovery/domain/taxonomy.dart';
 
 class MapState {
   final LatLng? userLocation;
   final bool isLoading;
+  final Vibe? activeVibe;
 
-  MapState({this.userLocation, this.isLoading = true});
+  MapState({this.userLocation, this.isLoading = true, this.activeVibe});
 
-  MapState copyWith({LatLng? userLocation, bool? isLoading}) {
+  MapState copyWith({LatLng? userLocation, bool? isLoading, Vibe? activeVibe}) {
     return MapState(
       userLocation: userLocation ?? this.userLocation,
       isLoading: isLoading ?? this.isLoading,
+      activeVibe: activeVibe ?? this.activeVibe,
     );
   }
 }
@@ -21,7 +25,20 @@ class MapController extends StateNotifier<MapState> {
 
   MapController(this._locationService) : super(MapState()) {
     print('MapController created. Initializing location...');
+    _randomizeVibe();
     _initLocation();
+  }
+
+  void _randomizeVibe() {
+    final validVibes = Vibe.values.where((v) => v != Vibe.unknown).toList();
+    final random = Random();
+    final selected = validVibes[random.nextInt(validVibes.length)];
+    state = state.copyWith(activeVibe: selected);
+    print('Honest Roulette: Selected Vibe -> ${selected.name}');
+  }
+  
+  void clearVibe() {
+     state = state.copyWith(activeVibe: null); // User cleared filter
   }
 
   Future<void> _initLocation() async {
